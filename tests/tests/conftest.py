@@ -5,7 +5,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-
+    def pytest_addoption(parser):
+    parser.addoption("--headed", action="store_true", help="Show real Chrome window")
 @pytest.fixture
 def driver():
     opts = Options()
