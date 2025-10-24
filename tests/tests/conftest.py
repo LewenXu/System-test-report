@@ -1,0 +1,37 @@
+
+import pytest
+from pathlib import Path
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+
+@pytest.fixture
+def driver():
+    opts = Options()
+    opts.add_argument("--headless=new")
+    opts.add_argument("--window-size=1280,900")
+    opts.add_argument("--no-sandbox")
+    opts.add_argument("--disable-dev-shm-usage")
+    service = Service(ChromeDriverManager().install())
+    d = webdriver.Chrome(service=service, options=opts)
+    yield d
+    d.quit()
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    rep = outcome.get_result()
+    if rep.when != "call" or rep.passed:
+        return
+    drv = item.funcargs.get("driver")
+    if not drv:
+        return
+    Path("artifacts").mkdir(exist_ok=True)
+    png_path = f"artifacts/{item.name}.png"
+    drv.save_screenshot(png_path)
+    try:
+        from pytest_html import extras
+        rep.extra = getattr(rep, "extra", [])
+        rep.extra.append(extras.image(png_path))
+    except Exception:
+        pass
